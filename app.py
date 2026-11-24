@@ -8,7 +8,7 @@ from datetime import date
 
 import streamlit as st
 
-from engine import extract, flow, rules
+from engine import extract, flow, pack, rules
 
 CASE_TYPE = "after_a_death"
 
@@ -60,6 +60,7 @@ def demo_sidebar():
 
 def go(index):
     st.session_state.screen = index
+    st.session_state.pop("pack", None)  # rebuilt next time the pack screen is shown
 
 
 def start_again():
@@ -235,11 +236,38 @@ def show_results(case, screen, index):
     nav_buttons(case, index)
 
 
-def show_placeholder(case, screen, index):
+def show_pack(case, screen, index):
+    if "pack" not in st.session_state:
+        results = rules.evaluate(case, st.session_state.answers, st.session_state.extracted)
+        data = pack.build(case, st.session_state.answers, results)
+        json_bytes, pdf_bytes = pack.to_json(data), pack.to_pdf(data)
+        pack.save(data, json_bytes, pdf_bytes)
+        st.session_state.pack = (data, json_bytes, pdf_bytes)
+    data, json_bytes, pdf_bytes = st.session_state.pack
+
     st.header(screen["title"])
-    with st.container(key=f"card_{screen['id']}"):
-        st.write("This screen is coming next.")
-    nav_buttons(case, index)
+    st.markdown(f'<p class="muted">{screen["intro"]}</p>', unsafe_allow_html=True)
+    added = sum(1 for d in data["documents"] if d["status"] != "missing")
+    with st.container(key="card_pack"):
+        st.markdown("**In your pack**")
+        st.markdown(
+            f"- Your answers, in plain words\n"
+            f"- {added} of {len(data['documents'])} documents, with what we found in them\n"
+            f"- Final personal tax return: **{data['results']['final_return']['status']}**\n"
+            f"- Estate tax return: **{data['results']['estate_return']['status']}**\n"
+            f"- Your fixed-fee quote")
+        if data["missing_documents"]:
+            st.markdown(f'<p class="muted">Still to send later: {", ".join(data["missing_documents"])}.</p>',
+                        unsafe_allow_html=True)
+        left, right = st.columns(2)
+        with left:
+            st.download_button("Download PDF", pdf_bytes, file_name="handover-pack-demo.pdf",
+                               mime="application/pdf", on_click="ignore", width="stretch")
+        with right:
+            st.download_button("Download JSON", json_bytes, file_name="handover-pack-demo.json",
+                               mime="application/json", on_click="ignore", width="stretch")
+    st.caption("Demo: the pack uses made-up data and demo rules.")
+    nav_buttons(case, index, continue_label="Send to an accountant (demo)")
 
 
 def show_thanks(case, screen, index):
@@ -258,7 +286,7 @@ SCREENS = {
     "questions": show_questions,
     "documents": show_documents,
     "results": show_results,
-    "pack": show_placeholder,
+    "pack": show_pack,
     "thanks": show_thanks,
 }
 
