@@ -1,0 +1,41 @@
+{
+  "family": "a",
+  "person": "Joan Example",
+  "story": "Simple: a pension only. No estate income, nothing sold, probate not needed.",
+  "demo_answers": {
+    "role": "I am the executor or administrator",
+    "first_name": "Joan",
+    "date_of_death": "2 April 2026",
+    "lived_in_uk": "Yes",
+    "income_types": [
+      "A pension"
+    ],
+    "usually_filed_sa": "No",
+    "estate_income": "No income yet",
+    "anything_sold": "No",
+    "probate": "Not needed"
+  },
+  "documents": {
+    "death_certificate": {
+      "file": "a_death_certificate.pdf",
+      "document_type": "death_certificate",
+      "fields": {
+        "full_name": "Joan Example",
+        "date_of_death": "2 April 2026"
+      },
+      "missing_fields": [],
+      "confidence": "high"
+    },
+    "pension_statement": {
+      "file": "a_pension_statement.pdf",
+      "document_type": "pension_statement",
+      "fields": {
+        "provider": "Example Pensions Ltd",
+        "annual_amount": 9000,
+        "tax_deducted": 0
+      },
+      "missing_fields": [],
+      "confidence": "high"
+    }
+  }
+}

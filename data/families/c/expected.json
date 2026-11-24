@@ -1,0 +1,63 @@
+{
+  "family": "c",
+  "person": "Rita Demo",
+  "story": "Complex: rental property and self-employed work. House sold after death. Probate granted.",
+  "demo_answers": {
+    "role": "I am helping the executor",
+    "first_name": "Rita",
+    "date_of_death": "10 June 2026",
+    "lived_in_uk": "Yes",
+    "income_types": [
+      "Self-employed work",
+      "Rental property"
+    ],
+    "usually_filed_sa": "Yes",
+    "estate_income": "Some, for example rent or interest",
+    "anything_sold": "Yes",
+    "probate": "Yes"
+  },
+  "documents": {
+    "death_certificate": {
+      "file": "c_death_certificate.pdf",
+      "document_type": "death_certificate",
+      "fields": {
+        "full_name": "Rita Demo",
+        "date_of_death": "10 June 2026"
+      },
+      "missing_fields": [],
+      "confidence": "high"
+    },
+    "rental_summary": {
+      "file": "c_rental_summary.pdf",
+      "document_type": "rental_summary",
+      "fields": {
+        "rent_received": 2000,
+        "expenses": 500,
+        "period": "6 April 2026 to 10 June 2026"
+      },
+      "missing_fields": [],
+      "confidence": "high"
+    },
+    "sale_statement": {
+      "file": "c_sale_statement.pdf",
+      "document_type": "sale_statement",
+      "fields": {
+        "asset": "House at 1 Example Road, Sampletown",
+        "sale_date": "30 October 2026",
+        "sale_price": 250000
+      },
+      "missing_fields": [],
+      "confidence": "high"
+    },
+    "grant_of_probate": {
+      "file": "c_grant_of_probate.pdf",
+      "document_type": "grant_of_probate",
+      "fields": {
+        "executor_name": "Sam Demo",
+        "date_granted": "1 September 2026"
+      },
+      "missing_fields": [],
+      "confidence": "high"
+    }
+  }
+}

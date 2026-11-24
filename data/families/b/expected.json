@@ -1,0 +1,75 @@
+{
+  "family": "b",
+  "person": "Peter Sample",
+  "story": "Medium: pension, savings interest and shares. Some estate interest. Probate granted.",
+  "demo_answers": {
+    "role": "I am the executor or administrator",
+    "first_name": "Peter",
+    "date_of_death": "14 August 2026",
+    "lived_in_uk": "Yes",
+    "income_types": [
+      "A pension",
+      "Savings interest",
+      "Shares or dividends"
+    ],
+    "usually_filed_sa": "No",
+    "estate_income": "Some, for example rent or interest",
+    "anything_sold": "No",
+    "probate": "Yes"
+  },
+  "documents": {
+    "death_certificate": {
+      "file": "b_death_certificate.pdf",
+      "document_type": "death_certificate",
+      "fields": {
+        "full_name": "Peter Sample",
+        "date_of_death": "14 August 2026"
+      },
+      "missing_fields": [],
+      "confidence": "high"
+    },
+    "pension_statement": {
+      "file": "b_pension_statement.pdf",
+      "document_type": "pension_statement",
+      "fields": {
+        "provider": "Example Pensions Ltd",
+        "annual_amount": 18000,
+        "tax_deducted": 1100
+      },
+      "missing_fields": [],
+      "confidence": "high"
+    },
+    "interest_letter": {
+      "file": "b_interest_letter.pdf",
+      "document_type": "interest_letter",
+      "fields": {
+        "bank": "Sampletown Building Society",
+        "interest_amount": 600,
+        "tax_year": "2025 to 2026"
+      },
+      "missing_fields": [],
+      "confidence": "high"
+    },
+    "dividend_statement": {
+      "file": "b_dividend_statement.pdf",
+      "document_type": "dividend_statement",
+      "fields": {
+        "company": "Demo Holdings plc",
+        "dividend_amount": 400,
+        "payment_date": "1 June 2026"
+      },
+      "missing_fields": [],
+      "confidence": "high"
+    },
+    "grant_of_probate": {
+      "file": "b_grant_of_probate.pdf",
+      "document_type": "grant_of_probate",
+      "fields": {
+        "executor_name": "Anna Sample",
+        "date_granted": "20 October 2026"
+      },
+      "missing_fields": [],
+      "confidence": "high"
+    }
+  }
+}
