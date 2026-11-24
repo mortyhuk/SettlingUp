@@ -36,6 +36,11 @@ table.quote td { border: none; border-bottom: 1px solid #E4EEE9; padding: 0.55re
 table.quote td.price { text-align: right; white-space: nowrap; color: #475467; }
 table.quote tr.total td { font-weight: 700; border-bottom: none; color: #134E4A; }
 .muted { color: #475467 !important; font-size: 16px !important; }
+.centre { text-align: center; }
+.q-label { font-weight: 600; margin-bottom: 0.2rem; }
+.hint { margin-top: 0; margin-bottom: 0.3rem; }
+.note { background: #E6F2EE; border-left: 4px solid #0F766E; color: #134E4A; border-radius: 8px;
+        padding: 0.8rem 1rem; margin-top: 0.4rem; }
 </style>
 """
 
@@ -83,12 +88,13 @@ def progress(case, screen):
 
 def nav_buttons(case, index, can_continue=True, continue_label="Continue"):
     st.write("")
-    left, right = st.columns(2)
-    with left:
+    with st.container(horizontal=True, gap="medium"):  # stays side by side on narrow screens
         st.button("Back", on_click=go, args=(flow.back_index(index),), width="stretch", key=f"back_{index}")
-    with right:
         st.button(continue_label, type="primary", disabled=not can_continue, on_click=go,
                   args=(flow.next_index(case, index),), width="stretch", key=f"next_{index}")
+    if not can_continue:
+        st.markdown('<p class="muted centre">Please answer the questions above to continue.</p>',
+                    unsafe_allow_html=True)
 
 
 # ---------- question widgets ----------
@@ -102,23 +108,30 @@ def ask(question, answers):
     values = [o["value"] for o in options]
     labels = {o["value"]: o["label"] for o in options}
 
+    # Show the label (and hint) ourselves, so every question looks the same.
+    st.markdown(f'<p class="q-label">{label}</p>', unsafe_allow_html=True)
+    if question.get("hint"):
+        st.markdown(f'<p class="muted hint">{question["hint"]}</p>', unsafe_allow_html=True)
+    show_label = "collapsed"
+
     if kind == "radio":
         current = answers.get(qid)
         answers[qid] = st.radio(label, values, index=values.index(current) if current in values else None,
-                                format_func=labels.get, key=f"q_{qid}")
+                                format_func=labels.get, key=f"q_{qid}", label_visibility=show_label)
     elif kind == "checkboxes":
-        st.markdown(f"**{label}**")
         chosen = set(answers.get(qid) or [])
         answers[qid] = [v for v in values if st.checkbox(labels[v], value=v in chosen, key=f"q_{qid}_{v}")]
     elif kind == "text":
-        answers[qid] = st.text_input(label, value=answers.get(qid, ""), key=f"q_{qid}")
+        answers[qid] = st.text_input(label, value=answers.get(qid, ""), key=f"q_{qid}",
+                                     label_visibility=show_label)
     elif kind == "date":
         answers[qid] = st.date_input(label, value=answers.get(qid), format="DD/MM/YYYY",
-                                     min_value=date(2015, 1, 1), max_value=date.today(), key=f"q_{qid}")
+                                     min_value=date(2015, 1, 1), max_value=date.today(), key=f"q_{qid}",
+                                     label_visibility=show_label)
 
     note = question.get("notes", {}).get(answers.get(qid)) if kind == "radio" else None
     if note:
-        st.info(note)
+        st.markdown(f'<div class="note">{note}</div>', unsafe_allow_html=True)
 
 
 # ---------- screens ----------
@@ -158,6 +171,7 @@ def show_found(doc, result):
                    "That is fine. Your accountant will look at it.")
     else:
         st.success(f"**What we found:** {extract.describe(doc['found'], result['fields'])}")
+        st.caption(f"Read from {file_name}")
         if result["missing_fields"]:
             missing = ", ".join(f.replace("_", " ") for f in result["missing_fields"])
             st.caption(f"Some details were not clear ({missing}). Your accountant will check them.")
@@ -212,6 +226,7 @@ def show_results(case, screen, index):
     results = rules.evaluate(case, st.session_state.answers, st.session_state.extracted)
     st.header(screen["title"])
     st.markdown(f'<div class="demo-rules">{results["label"]}</div>', unsafe_allow_html=True)
+    st.markdown(f'<p class="muted">{screen["intro"]}</p>', unsafe_allow_html=True)
 
     final = results["final_return"]
     result_card("final", final, final["period"]["text"] if final["period"] else None)
@@ -277,6 +292,7 @@ def show_thanks(case, screen, index):
     with st.container(key="card_thanks"):
         for n, text in enumerate(screen["steps"], start=1):
             st.markdown(f"**{n}.** {text}")
+    st.markdown(f'<p class="muted">{screen["closing"]}</p>', unsafe_allow_html=True)
     st.caption("Demo: nothing has been sent to anyone.")
     st.write("")
     st.button("Start again", type="primary", on_click=start_again, width="stretch")

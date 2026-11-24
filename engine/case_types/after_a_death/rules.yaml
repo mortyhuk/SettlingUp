@@ -40,8 +40,8 @@ estate_return:
     may_be_needed:
       status: May be needed
       text: >-
-        Because the estate has had income or something was sold, the estate may need its own
-        tax return. An accountant will confirm whether it is needed.
+        As the estate has had some income or sold something, it may need its own tax return.
+        An accountant will confirm whether it is needed.
     simpler:
       status: Probably a simpler route
       text: >-
