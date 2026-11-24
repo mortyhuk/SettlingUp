@@ -1,0 +1,151 @@
+# Screens and questions for the "after a death" case type.
+# kind: welcome | questions | documents | results | pack | thanks
+# step: the number shown in "Step X of <steps_total>" (welcome and thanks have none).
+# {person} in a label becomes the first name, or "they" if no name was given.
+
+name: after_a_death
+app_title: One step at a time
+demo_banner: "Demo only. Everything here uses made-up examples."
+steps_total: 7
+
+screens:
+  - id: welcome
+    kind: welcome
+    title: One step at a time
+    body: |
+      We are sorry you are dealing with this.
+
+      When someone dies, there can be tax to sort out for the last part of their life,
+      and sometimes for their estate. We will help you work out what may be needed and
+      gather what an accountant will ask for.
+
+      It takes about 10 minutes. You can go back at any point.
+    button: Start
+
+  - id: who
+    kind: questions
+    step: 1
+    title: Who are you?
+    intro: This helps us explain things in the right way.
+    questions:
+      - id: role
+        type: radio
+        label: Which of these best describes you?
+        required: true
+        options:
+          - {value: executor, label: I am the executor or administrator}
+          - {value: helper, label: I am helping the executor}
+          - {value: not_sure, label: Not sure yet}
+
+  - id: person
+    kind: questions
+    step: 2
+    title: About the person who died
+    intro: Take your time. You only need to share what you are comfortable with.
+    questions:
+      - id: first_name
+        type: text
+        label: Their first name (optional)
+        required: false
+      - id: date_of_death
+        type: date
+        label: Date they died
+        required: true
+      - id: lived_in_uk
+        type: radio
+        label: Did they live in the UK?
+        required: true
+        options:
+          - {value: "yes", label: "Yes"}
+          - {value: "no", label: "No"}
+        notes:
+          "no": >-
+            Thank you for telling us. Tax can work differently when someone lived abroad,
+            so a specialist will check this part for you. You can carry on as normal.
+
+  - id: income_before
+    kind: questions
+    step: 3
+    title: Income before they died
+    intro: Tick everything that applies. It is fine if you are not sure.
+    questions:
+      - id: income_types
+        type: checkboxes
+        label: What income did {person} have?
+        required: true
+        options:
+          - {value: job, label: Pay from a job}
+          - {value: pension, label: A pension}
+          - {value: self_employed, label: Self-employed work}
+          - {value: rental, label: Rental property}
+          - {value: savings, label: Savings interest}
+          - {value: shares, label: Shares or dividends}
+          - {value: not_sure, label: Not sure}
+      - id: usually_filed_sa
+        type: radio
+        label: Did {person} usually send a Self Assessment tax return?
+        required: true
+        options:
+          - {value: "yes", label: "Yes"}
+          - {value: "no", label: "No"}
+          - {value: not_sure, label: Not sure}
+
+  - id: since
+    kind: questions
+    step: 4
+    title: Since they died
+    intro: The estate is everything they left behind, such as money, property and belongings.
+    questions:
+      - id: estate_income
+        type: radio
+        label: Has the estate had any income yet?
+        required: true
+        options:
+          - {value: none, label: No income yet}
+          - {value: some, label: "Some, for example rent or interest"}
+          - {value: not_sure, label: Not sure}
+      - id: anything_sold
+        type: radio
+        label: Has anything been sold, like a house or shares?
+        required: true
+        options:
+          - {value: "yes", label: "Yes"}
+          - {value: "no", label: "No"}
+          - {value: not_sure, label: Not sure}
+      - id: probate
+        type: radio
+        label: Has probate been granted?
+        required: true
+        options:
+          - {value: "yes", label: "Yes"}
+          - {value: not_yet, label: Not yet}
+          - {value: not_needed, label: Not needed}
+          - {value: not_sure, label: Not sure}
+
+  - id: documents
+    kind: documents
+    step: 5
+    title: Your documents
+    intro: >-
+      Based on your answers, these are the documents an accountant will want to see.
+      Add what you have now. Anything missing can be sent later.
+
+  - id: results
+    kind: results
+    step: 6
+    title: What is likely to be needed
+
+  - id: pack
+    kind: pack
+    step: 7
+    title: Your pack for an accountant
+    intro: We have put everything together so an accountant can pick it up from here.
+
+  - id: thanks
+    kind: thanks
+    title: Thank you
+    intro: You have done the hard part. Here is what happens next.
+    steps:
+      - An accountant reads your pack and documents.
+      - They confirm which returns are needed and your fixed fee.
+      - They contact you to agree the next steps, at a pace that suits you.

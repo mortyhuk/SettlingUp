@@ -1,0 +1,14 @@
+# Calm green look from CLAUDE.md. base = "light" so it looks the same on every computer.
+[theme]
+base = "light"
+primaryColor = "#0F766E"
+backgroundColor = "#EAF3EF"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#1D2939"
+baseFontSize = 18
+
+[client]
+toolbarMode = "minimal"
+
+[browser]
+gatherUsageStats = false
