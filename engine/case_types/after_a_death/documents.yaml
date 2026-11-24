@@ -1,0 +1,80 @@
+# Which documents to ask for, based on the answers.
+# reads_as: the document type the reader looks for (see engine/extract.py). Empty means we do not read it.
+# found: how to describe what was read, in plain words. {field} is replaced with the value.
+
+always:
+  - id: death_certificate
+    label: Death certificate
+    hint: A copy is fine.
+    reads_as: death_certificate
+    found: "{full_name}, died {date_of_death}"
+
+by_answer:
+  - when: {question: income_types, includes: job}
+    documents:
+      - id: payslip
+        label: Last payslip
+        hint: The most recent one you can find.
+        reads_as: payslip
+        found: "£{pay_to_date} pay so far this tax year from {employer}"
+      - id: p45_p60
+        label: P45 or P60
+        hint: The employer usually sends a P45 after someone dies.
+        reads_as: p45_p60
+        found: "£{pay_to_date} pay and £{tax_to_date} tax from {employer}"
+
+  - when: {question: income_types, includes: pension}
+    documents:
+      - id: pension_statement
+        label: Pension statements
+        hint: A yearly statement or a recent letter from the pension provider.
+        reads_as: pension_statement
+        found: "£{annual_amount} a year from {provider}, £{tax_deducted} tax taken off"
+
+  - when: {question: income_types, includes: self_employed}
+    documents:
+      - id: self_employed_records
+        label: Self-employed income and costs records
+        hint: Any records, spreadsheets or summaries you have.
+        reads_as:
+        found: ""
+
+  - when: {question: income_types, includes: rental}
+    documents:
+      - id: rental_summary
+        label: Rental income and costs
+        hint: A letting agent statement or their own records.
+        reads_as: rental_summary
+        found: "£{rent_received} rent and £{expenses} costs, {period}"
+
+  - when: {question: income_types, includes: savings}
+    documents:
+      - id: interest_letter
+        label: Interest letters from banks or building societies
+        hint: Many banks will send one if you ask.
+        reads_as: interest_letter
+        found: "£{interest_amount} interest from {bank}, tax year {tax_year}"
+
+  - when: {question: income_types, includes: shares}
+    documents:
+      - id: dividend_statement
+        label: Share statements and dividend vouchers
+        hint: From the company, a broker or the share registrar.
+        reads_as: dividend_statement
+        found: "£{dividend_amount} dividend from {company}, paid {payment_date}"
+
+  - when: {question: anything_sold, equals: "yes"}
+    documents:
+      - id: sale_statement
+        label: Sale or completion statement
+        hint: The solicitor or estate agent will have this.
+        reads_as: sale_statement
+        found: "{asset}, sold for £{sale_price} on {sale_date}"
+
+  - when: {question: probate, equals: "yes"}
+    documents:
+      - id: grant_of_probate
+        label: Grant of probate or letters of administration
+        hint: A copy is fine.
+        reads_as: grant_of_probate
+        found: "Granted to {executor_name} on {date_granted}"

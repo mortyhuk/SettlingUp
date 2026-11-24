@@ -8,7 +8,7 @@ from datetime import date
 
 import streamlit as st
 
-from engine import flow
+from engine import extract, flow
 
 CASE_TYPE = "after_a_death"
 
@@ -39,6 +39,18 @@ def init_state():
         st.session_state.case = flow.load_case_type(CASE_TYPE)
         st.session_state.screen = 0
         st.session_state.answers = {}
+        st.session_state.extracted = {}
+        st.session_state.family = "b"
+
+
+def demo_sidebar():
+    with st.sidebar:
+        st.markdown("**Demo settings**")
+        st.session_state.family = st.radio(
+            "Sample family for document reading", ["a", "b", "c"], index=["a", "b", "c"].index(st.session_state.family),
+            format_func=lambda f: f"Family {f.upper()}", key="family_picker")
+        st.caption("Used when an uploaded file name does not start with a_, b_ or c_. "
+                   "The sample files are in data/families/.")
 
 
 def go(index):
@@ -126,6 +138,60 @@ def show_questions(case, screen, index):
     nav_buttons(case, index, can_continue=flow.is_complete(screen, answers))
 
 
+def remove_document(doc_id):
+    st.session_state.extracted.pop(doc_id, None)
+
+
+def show_found(doc, result):
+    file_name = result["file_name"]
+    if not doc.get("reads_as"):
+        st.success(f"Added **{file_name}**. Your accountant will go through these records.")
+    elif not result["read_ok"]:
+        st.warning(f"Added **{file_name}**. We could not read this one automatically. "
+                   "That is fine. Your accountant will look at it.")
+    else:
+        st.success(f"**What we found:** {extract.describe(doc['found'], result['fields'])}")
+        if result["missing_fields"]:
+            missing = ", ".join(f.replace("_", " ") for f in result["missing_fields"])
+            st.caption(f"Some details were not clear ({missing}). Your accountant will check them.")
+
+
+def show_documents(case, screen, index):
+    answers = st.session_state.answers
+    extracted = st.session_state.extracted
+    st.header(screen["title"])
+    st.markdown(f'<p class="muted">{screen["intro"]}</p>', unsafe_allow_html=True)
+
+    items = flow.checklist(case, answers)
+    added = sum(1 for doc in items if doc["id"] in extracted)
+    st.markdown(f"**{added} of {len(items)} added**")
+
+    for doc in items:
+        with st.container(key=f"card_doc_{doc['id']}"):
+            st.markdown(f"**{doc['label']}**")
+            st.markdown(f'<p class="muted">{doc["hint"]}</p>', unsafe_allow_html=True)
+            result = extracted.get(doc["id"])
+            if result:
+                show_found(doc, result)
+                st.button("Remove", key=f"remove_{doc['id']}", on_click=remove_document, args=(doc["id"],),
+                          type="tertiary")
+                continue
+            upload = st.file_uploader(f"Add your {doc['label'].lower()}", type=["pdf", "png", "jpg", "jpeg"],
+                                      key=f"upload_{doc['id']}", label_visibility="collapsed")
+            if upload is not None:
+                if doc.get("reads_as"):
+                    with st.spinner("Reading your document..."):
+                        result = extract.read_document(doc["reads_as"], upload.name, st.session_state.family)
+                else:
+                    result = {"read_ok": None}
+                result["file_name"] = upload.name
+                extracted[doc["id"]] = result
+                st.rerun()
+
+    st.caption("Demo: document reading shows prepared sample results. No real documents are used.")
+    nav_buttons(case, index)
+
+
 def show_placeholder(case, screen, index):
     st.header(screen["title"])
     with st.container(key=f"card_{screen['id']}"):
@@ -147,7 +213,7 @@ def show_thanks(case, screen, index):
 SCREENS = {
     "welcome": show_welcome,
     "questions": show_questions,
-    "documents": show_placeholder,
+    "documents": show_documents,
     "results": show_placeholder,
     "pack": show_placeholder,
     "thanks": show_thanks,
@@ -157,6 +223,7 @@ SCREENS = {
 def main():
     st.markdown(CSS, unsafe_allow_html=True)
     init_state()
+    demo_sidebar()
     case = st.session_state.case
     index = st.session_state.screen
     screen = flow.screens(case)[index]
