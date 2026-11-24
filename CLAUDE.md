@@ -9,7 +9,7 @@ A small web app that:
 1. asks a few gentle questions,
 2. reads made-up documents with AI,
 3. shows a document checklist, which returns are likely needed and a fixed-fee quote,
-4. produces a handover pack for an accountant (JSON and PDF).
+4. produces a handover pack for an accountant (PDF).
 
 It must look real in a 2-minute video. It does NOT need to be production-ready.
 
@@ -74,7 +74,7 @@ The second case type (doctors' returns) was added this way.
    Anything sold, like a house or shares? (Yes / No / Not sure). Probate granted? (Yes / Not yet / Not needed / Not sure).
 6. Your documents: checklist built from the answers, with upload per document.
 7. Results: final return, estate return, key dates, fixed-fee quote.
-8. Accountant pack: summary + download (JSON and PDF) + "Send to an accountant" (goes to the inbox).
+8. Accountant pack: summary + download (PDF) + "Send to an accountant" (goes to the inbox).
 9. Thank you: what happens next (3 short steps).
 
 ## Demo rules (rules.yaml) - must be checked by a UK accountant before real use
@@ -185,6 +185,11 @@ To empty the inbox and all saved cases, delete the out/ folder.
   return, so it is priced as one more tax return. Nobody has agreed prices for these new services.
 - Still not real: AI reading (prepared results), accountant review of the rules, agreed prices,
   email, sign-in, and any security or data protection review. Do not put real documents in.
+
+## Decisions (24 Nov 2026, after team feedback)
+- No JSON download anywhere on screen (not on the pack screen, not in the accountant inbox).
+  People and accountants only see the PDF. The JSON is still built and saved in out/ behind the
+  scenes, because the inbox stores the pack that way. Do not add a JSON button back.
 
 ## Definition of done
 Family B can be run start to finish in under 90 seconds: answers, uploads, AI reading (or mock),

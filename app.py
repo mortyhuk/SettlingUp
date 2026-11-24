@@ -475,13 +475,8 @@ def show_pack(case, screen, index):
         if data["missing_documents"]:
             st.markdown(f'<p class="muted">Still to send later: {", ".join(data["missing_documents"])}.</p>',
                         unsafe_allow_html=True)
-        left, right = st.columns(2)
-        with left:
-            st.download_button("Download PDF", pdf_bytes, file_name="handover-pack.pdf",
-                               mime="application/pdf", on_click="ignore", width="stretch")
-        with right:
-            st.download_button("Download JSON", json_bytes, file_name="handover-pack.json",
-                               mime="application/json", on_click="ignore", width="stretch")
+        st.download_button("Download your pack (PDF)", pdf_bytes, file_name="handover-pack.pdf",
+                           mime="application/pdf", on_click="ignore", width="stretch")
     nav_buttons(case, index, continue_label="Send to an accountant", on_continue=send_pack)
 
 

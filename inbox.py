@@ -148,10 +148,5 @@ def show_case(case):
         st.markdown(f"**{quote['title']}**")
         table([(line["label"], line["price"]) for line in quote["lines"]] + [(quote["total_label"], quote["total"])])
 
-    left, right = st.columns(2)
-    with left:
-        st.download_button("Download PDF", pack.to_pdf(data), file_name=f"handover-pack-{code}.pdf",
-                           mime="application/pdf", on_click="ignore", width="stretch")
-    with right:
-        st.download_button("Download JSON", pack.to_json(data), file_name=f"handover-pack-{code}.json",
-                           mime="application/json", on_click="ignore", width="stretch")
+    st.download_button("Download the pack (PDF)", pack.to_pdf(data), file_name=f"handover-pack-{code}.pdf",
+                       mime="application/pdf", on_click="ignore", width="stretch")
