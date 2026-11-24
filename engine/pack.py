@@ -1,4 +1,4 @@
-"""Builds the handover pack for an accountant: a JSON file and a 1-2 page PDF, both marked Demo."""
+"""Builds the handover pack for an accountant: a JSON file and a 1-2 page PDF."""
 
 import io
 from xml.sax.saxutils import escape
@@ -10,15 +10,17 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.platypus import KeepTogether, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from engine import extract, flow
 
 OUT_DIR = Path(__file__).resolve().parent.parent / "out"
-DEMO_NOTE = "DEMO ONLY. Made-up data. Demo rules, not real tax rules. An accountant must confirm everything."
 STATUS_WORDS = {"added": "Added", "check": "Added, needs a look", "missing": "Still to send"}
+# Whether the person has checked the values we read: "yes", "corrected" or not yet (None).
+CONFIRMED_WORDS = {"yes": "Confirmed by the person.", "corrected": "Corrected by the person.",
+                   None: "Not confirmed by the person yet."}
 
-GREEN = colors.HexColor("#134E4A")
+GREEN = colors.HexColor("#154618")
 LINE = colors.HexColor("#D0D5DD")
 
 
@@ -37,7 +39,7 @@ def build(case, answers, results, created=None):
         doc = found_templates[row["id"]]
         summary = ""
         if result.get("read_ok"):
-            summary = extract.describe(doc["found"], result["fields"])
+            summary = extract.describe(doc["found"], result["fields"]) + ". " + CONFIRMED_WORDS[result.get("confirmed")]
         elif result.get("read_ok") is False:
             summary = "Could not be read automatically."
         elif result:
@@ -51,11 +53,14 @@ def build(case, answers, results, created=None):
             "fields": result.get("fields", {}),
             "missing_fields": result.get("missing_fields", []),
             "confidence": result.get("confidence"),
+            "confirmed": result.get("confirmed"),
+            "corrections": result.get("corrections", {}),
+            "stored_file": result.get("stored_file"),
+            "added": result.get("added", ""),
         })
-    final = results["final_return"]
     return {
-        "demo": DEMO_NOTE,
         "case_type": case["questions"]["name"],
+        "service": case["questions"]["service_name"],
         "created": (created or datetime.now()).isoformat(timespec="seconds"),
         "answers": {k: json_safe(v) for k, v in answers.items()},
         "answers_in_words": [{"question": q, "answer": a} for q, a in flow.answer_summary(case, answers)],
@@ -63,11 +68,11 @@ def build(case, answers, results, created=None):
         "missing_documents": results["missing_documents"],
         "points_to_check": results["points_to_check"],
         "results": {
-            "label": results["label"],
-            "final_return": {"status": final["status"], "text": final["text"], "period": final["period"]},
-            "estate_return": {"status": results["estate_return"]["status"],
-                              "text": results["estate_return"]["text"]},
-            "key_dates": results["key_dates"]["text"],
+            "rules_version": results["rules_version"],
+            "rules_reviewed_by": results["rules_reviewed_by"],
+            "returns": [{"id": r["id"], "title": r["title"], "status": r["status"], "text": r["text"],
+                         "period": r["period"]} for r in results["returns"]],
+            "key_dates": {"text": results["key_dates"]["text"], "dates": results["key_dates"]["dates"]},
         },
         "quote": results["quote"],
     }
@@ -77,17 +82,10 @@ def to_json(pack):
     return json.dumps(pack, indent=2, ensure_ascii=False).encode("utf-8")
 
 
-def _demo_mark(canvas, doc):
-    canvas.saveState()
-    canvas.setFillColor(colors.Color(0.06, 0.46, 0.43, alpha=0.08))
-    canvas.setFont("Helvetica-Bold", 90)
-    canvas.translate(A4[0] / 2, A4[1] / 2)
-    canvas.rotate(35)
-    canvas.drawCentredString(0, 0, "DEMO")
-    canvas.restoreState()
+def _footer(canvas, doc):
     canvas.setFont("Helvetica", 8)
     canvas.setFillColor(colors.HexColor("#667085"))
-    canvas.drawString(18 * mm, 10 * mm, DEMO_NOTE)
+    canvas.drawString(18 * mm, 10 * mm, "Handover pack. An accountant confirms everything in it.")
     canvas.drawRightString(A4[0] - 18 * mm, 10 * mm, f"Page {doc.page}")
 
 
@@ -100,7 +98,7 @@ def _table(rows, widths, header=True):
         ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
     ]
     if header:
-        style.append(("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#EAF3EF")))
+        style.append(("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#EAF3EB")))
     table.setStyle(TableStyle(style))
     return table
 
@@ -112,8 +110,6 @@ def to_pdf(pack):
     h1 = ParagraphStyle("h1", parent=styles["Heading1"], textColor=GREEN, fontSize=18, spaceAfter=4)
     h2 = ParagraphStyle("h2", parent=styles["Heading2"], textColor=GREEN, fontSize=12.5, spaceBefore=10,
                         spaceAfter=4)
-    banner = ParagraphStyle("banner", parent=body, backColor=colors.HexColor("#FDF1D6"),
-                            textColor=colors.HexColor("#7A4B00"), borderPadding=5, spaceAfter=8)
 
     def p(text, style=body, bold=False):
         text = escape(str(text))
@@ -122,9 +118,7 @@ def to_pdf(pack):
     width = A4[0] - 36 * mm
     story = [
         p("Handover pack for an accountant", h1),
-        p(f"Case type: tax after a death. Created {pack['created'].replace('T', ' at ')}.", small),
-        Spacer(1, 6),
-        p(DEMO_NOTE, banner),
+        p(f"Service: {pack['service']}. Created {pack['created'].replace('T', ' at ')}.", small),
         p("About the case", h2),
         _table([[p(r["question"]), p(r['answer'], bold=True)] for r in pack["answers_in_words"]],
                [width * 0.55, width * 0.45], header=False),
@@ -135,19 +129,23 @@ def to_pdf(pack):
     ]
 
     r = pack["results"]
-    final = r["final_return"]
-    period = f" {final['period']['text']}" if final["period"] else ""
     story += [
-        p("Results (demo rules)", h2),
-        p(r["label"], small),
+        p("Results", h2),
+        p(f"Rules version {r['rules_version']}." + (f" Reviewed by {r['rules_reviewed_by']}."
+          if r["rules_reviewed_by"] else ""), small),
         Spacer(1, 3),
-        _table([
-            [p("Final personal tax return", bold=True), p(final['status'], bold=True), p(final["text"] + period)],
-            [p("Estate tax return", bold=True), p(r['estate_return']['status'], bold=True),
-             p(r["estate_return"]["text"])],
-            [p("Key dates", bold=True), p("-"), p(r["key_dates"])],
-        ], [width * 0.27, width * 0.2, width * 0.53], header=False),
+        _table([[p(item["title"], bold=True), p(item["status"], bold=True),
+                 p(item["text"] + (f" {item['period']['text']}" if item["period"] else ""))]
+                for item in r["returns"]],
+               [width * 0.27, width * 0.2, width * 0.53], header=False),
     ]
+    dates = [p("Key dates", h2)]
+    if r["key_dates"]["dates"]:
+        dates.append(_table([[p(d["text"], bold=True), p(d["label"])] for d in r["key_dates"]["dates"]],
+                            [width * 0.27, width * 0.73], header=False))
+        dates.append(Spacer(1, 3))
+    dates.append(p(r["key_dates"]["text"], small))
+    story.append(KeepTogether(dates))  # do not split a short section across two pages
 
     points = pack["points_to_check"] or ["No extra points were flagged from the answers or documents."]
     story += [p("Points to check", h2)] + [p(f"- {point}") for point in points]
@@ -156,18 +154,18 @@ def to_pdf(pack):
         story += [p("Still to send", h2)] + [p(f"- {label}") for label in pack["missing_documents"]]
 
     q = pack["quote"]
-    story += [
+    story.append(KeepTogether([
         p(q["title"], h2),
         _table([[p(line["label"]), p(line["price"])] for line in q["lines"]] +
                [[p(q['total_label'], bold=True), p(q['total'], bold=True)]],
                [width * 0.75, width * 0.25], header=False),
         p(q["note"], small),
-    ]
+    ]))
 
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4, leftMargin=18 * mm, rightMargin=18 * mm,
-                            topMargin=16 * mm, bottomMargin=18 * mm, title="Handover pack (demo)")
-    doc.build(story, onFirstPage=_demo_mark, onLaterPages=_demo_mark)
+                            topMargin=16 * mm, bottomMargin=18 * mm, title="Handover pack")
+    doc.build(story, onFirstPage=_footer, onLaterPages=_footer)
     return buffer.getvalue()
 
 

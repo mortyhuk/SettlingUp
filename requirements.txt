@@ -1,4 +1,5 @@
-streamlit
-pyyaml
+# Pinned to the versions the demo was tested with. anthropic is not used yet (document reading is mock only).
+streamlit==1.67.0
+pyyaml==6.0.3
+reportlab==5.0.1
 anthropic
-reportlab

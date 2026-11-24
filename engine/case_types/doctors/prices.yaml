@@ -1,0 +1,24 @@
+# Quote prices in pounds, based on the public Taxfix UK prices (taxfix.com/en-uk, checked 24 Nov 2026):
+#   - Tax return, "Prepared & Filed Accurately" plan: £169 full price (£99 for new customers).
+#   - One-off tax advice consultation: £139.
+# Taxfix charges one fixed fee per tax return, whatever the income, so there are no extras by income type.
+# 0 is shown as "Included". The total is added up from the lines.
+
+title: Your fixed-fee quote
+note: One fixed fee for your tax return, including VAT. Your accountant will confirm it before any work starts.
+total_label: Total fixed fee
+
+always:
+  - {label: Checking your documents and preparing the handover, price: 0}
+
+# One price line per return, picked by the outcome key from rules.yaml.
+# An outcome with no line here adds nothing to the quote.
+returns:
+  self_assessment:
+    likely: {label: Self Assessment tax return, price: 169}
+    check: {label: Checking whether a tax return is needed, price: 0}
+  fee_relief:
+    worth_checking: {label: Claim for professional fees, price: 0}
+
+# Extra lines by answer, in the same shape as documents.yaml: {when: ..., label: ..., price: ...}.
+extras: []

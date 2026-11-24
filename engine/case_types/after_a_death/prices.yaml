@@ -1,29 +1,26 @@
-# Quote prices. [PRICE] is a placeholder until real prices are agreed.
+# Quote prices in pounds, based on the public Taxfix UK prices (taxfix.com/en-uk, checked 24 Nov 2026):
+#   - Tax return, "Prepared & Filed Accurately" plan: £169 full price (£99 for new customers).
+#   - One-off tax advice consultation: £139.
+# Taxfix charges one fixed fee per tax return, whatever the income, so there are no extras by income type.
+# Taxfix has no public price for an estate return, so it is priced here as one more tax return.
+# 0 is shown as "Included". The total is added up from the lines.
 
 title: Your fixed-fee quote
-note: "Demo prices: [PRICE] will be replaced with real fixed fees."
+note: One fixed fee for each tax return, including VAT. Your accountant will confirm it before any work starts.
 total_label: Total fixed fee
-total: "[PRICE]"
 
 always:
-  - {label: Checking your documents and preparing the handover, price: "[PRICE]"}
+  - {label: Checking your documents and preparing the handover, price: 0}
 
-final_return:
-  likely: {label: Final personal tax return, price: "[PRICE]"}
-  check: {label: Checking whether a final return is needed, price: "[PRICE]"}
+# One price line per return, picked by the outcome key from rules.yaml.
+returns:
+  final_return:
+    likely: {label: Final personal tax return, price: 169}
+    check: {label: Checking whether a final return is needed, price: 0}
+  estate_return:
+    may_be_needed: {label: Estate tax return (only if needed), price: 169}
+    simpler: {label: Tax advice call about the simpler route for the estate, price: 139}
+    not_sure: {label: Checking whether an estate return is needed, price: 0}
 
-estate_return:
-  may_be_needed: {label: Estate tax return (only if needed), price: "[PRICE]"}
-  simpler: {label: Help with the simpler route for the estate, price: "[PRICE]"}
-  not_sure: {label: Checking whether an estate return is needed, price: "[PRICE]"}
-
-extras:
-  - when: {question: income_types, includes: self_employed}
-    label: Self-employed income
-    price: "[PRICE]"
-  - when: {question: income_types, includes: rental}
-    label: Rental property income
-    price: "[PRICE]"
-  - when: {question: anything_sold, equals: "yes"}
-    label: Sale of a house or shares
-    price: "[PRICE]"
+# Extra lines by answer, in the same shape as documents.yaml: {when: ..., label: ..., price: ...}.
+extras: []

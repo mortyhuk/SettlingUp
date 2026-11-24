@@ -1,0 +1,78 @@
+# DEMO RULES ONLY. These are not real tax rules. A UK accountant must check them before real use.
+# Conditions use the same shape as documents.yaml: {question: id, equals: value} or {question: id, includes: value}.
+
+# Change the version whenever a rule changes. Every handover pack records the version it used.
+# reviewed_by is the accountant who has checked this version. Leave it empty until someone has.
+version: "0.1"
+reviewed_by: ""
+
+# Each item is one card on the results screen. Outcomes are tried in order and the first match wins.
+#   when_any: matches if ANY of the conditions is true.
+#   when_all: matches if ALL of the conditions are true.
+#   An outcome with neither always matches, so it goes last.
+returns:
+  - id: self_assessment
+    title: Self Assessment tax return
+    outcomes:
+      - key: likely
+        when_any:
+          - {question: usually_filed_sa, equals: "yes"}
+          - {question: work_types, includes: locum}
+          - {question: work_types, includes: private}
+          - {question: work_types, includes: gp_partner}
+          - {question: pension_statement, equals: "yes"}
+        status: Likely needed
+        text: >-
+          A Self Assessment tax return is likely to be needed for this tax year.
+          An accountant will confirm this.
+      - key: check
+        status: We'll check
+        text: >-
+          A tax return may not be needed, but we will check this for you.
+          An accountant will confirm.
+
+  - id: fee_relief
+    title: Tax relief on professional fees
+    outcomes:
+      - key: worth_checking
+        when_any:
+          - {question: fees, includes: gmc}
+          - {question: fees, includes: indemnity}
+          - {question: fees, includes: membership}
+        status: Worth checking
+        text: >-
+          You may be able to claim tax relief on fees you pay for yourself.
+          An accountant will confirm what can be claimed.
+      - key: nothing
+        status: Probably nothing to claim
+        text: >-
+          You told us you do not pay these fees yourself, so there is probably nothing to claim.
+          An accountant will confirm.
+
+key_dates:
+  title: Key dates
+  text: Your accountant will confirm the deadline for your return.
+  # Dates we already know, shown in date order. Each comes from an answer (question), a document we
+  # read (document + field) or the period of a return above. These are facts from the case, not
+  # deadlines. Dates we do not have are left out.
+  dates:
+    - {label: GMC registration fee paid, document: gmc_fee, field: payment_date}
+    - {label: Medical indemnity paid, document: indemnity_fee, field: payment_date}
+    - {label: Membership fee paid, document: membership_fee, field: payment_date}
+    - {label: Locum invoice sent, document: locum_invoice, field: invoice_date}
+
+# Short notes for the accountant, shown in the handover pack under "Points to check".
+# These only repeat what the person told us or what a document showed. They are not tax rules.
+accountant_points:
+  by_answer:
+    - when: {question: work_types, includes: not_sure}
+      text: Not sure about every kind of work done in the year.
+    - when: {question: usually_filed_sa, equals: not_sure}
+      text: Not sure whether a Self Assessment return is usually sent.
+    - when: {question: pension_statement, equals: "yes"}
+      text: Has a pension savings statement. The pension figures need a careful look.
+    - when: {question: pension_statement, equals: not_sure}
+      text: Not sure whether a pension savings statement was sent.
+  document_needs_look: "{label}: this could not be read fully. Please look at the original."
+  document_not_confirmed: "{label}: read automatically, but the person has not confirmed the details."
+  document_corrected: "{label}: the person changed the {field} from {read} to {given}."

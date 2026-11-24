@@ -1,6 +1,8 @@
-"""Create the made-up sample documents (PDFs) and expected.json for families A, B and C.
+"""Create the made-up sample documents (PDFs) and expected.json for families A, B, C and D.
 
-Everything here is invented. Every page says "SAMPLE - NOT A REAL DOCUMENT".
+Everything here is invented. Each document is clearly made up: the issuer line says "(fictional)",
+the reference starts with SAMPLE, and the names are Sample, Example and Demo. Keep it that way.
+No official designs or crests.
 The same data feeds the PDFs and expected.json, so the two always match.
 
 Run from the project folder:  python scripts/make_documents.py
@@ -9,7 +11,7 @@ Run from the project folder:  python scripts/make_documents.py
 import json
 from pathlib import Path
 
-from reportlab.lib.colors import Color, HexColor
+from reportlab.lib.colors import HexColor
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 
@@ -52,16 +54,41 @@ LAYOUTS = {
         "title": "Self-employed income and costs",
         "labels": {"business": "Business", "income": "Income", "costs": "Costs", "period": "Period"},
     },
+    # Doctors' case type
+    "p45_p60": {
+        "title": "End of year pay and tax summary (P60)",
+        "labels": {"employer": "Employer", "pay_to_date": "Pay in the year", "tax_to_date": "Tax deducted",
+                   "tax_year": "Tax year"},
+    },
+    "locum_invoice": {
+        "title": "Invoice for locum work",
+        "labels": {"payer": "Invoice to", "amount": "Amount", "invoice_date": "Invoice date"},
+    },
+    "pension_savings_statement": {
+        "title": "Pension savings statement",
+        "labels": {"scheme": "Pension scheme", "pension_input_amount": "Pension savings in the year",
+                   "tax_year": "Tax year"},
+    },
+    "gmc_fee": {
+        "title": "Registration fee receipt",
+        "labels": {"organisation": "Paid to", "amount": "Amount paid", "payment_date": "Payment date"},
+    },
+    "indemnity_fee": {
+        "title": "Indemnity subscription receipt",
+        "labels": {"organisation": "Paid to", "amount": "Amount paid", "payment_date": "Payment date"},
+    },
 }
 
 MONEY_FIELDS = {"annual_amount", "tax_deducted", "interest_amount", "dividend_amount", "rent_received",
-                "expenses", "sale_price", "pay_to_date", "tax_to_date", "income", "costs"}
+                "expenses", "sale_price", "pay_to_date", "tax_to_date", "income", "costs", "amount",
+                "pension_input_amount"}
 
 # Documents that the app does not read (the accountant reads them). Not added to expected.json.
 NOT_READ = {"self_employed_records"}
 
 FAMILIES = {
     "a": {
+        "case_type": "after_a_death",
         "person": "Joan Example",
         "story": "Simple: a pension only. No estate income, nothing sold, probate not needed.",
         "demo_answers": {
@@ -77,6 +104,7 @@ FAMILIES = {
         ],
     },
     "b": {
+        "case_type": "after_a_death",
         "person": "Peter Sample",
         "story": "Medium: pension, savings interest and shares. Some estate interest. Probate granted.",
         "demo_answers": {
@@ -99,6 +127,7 @@ FAMILIES = {
         ],
     },
     "c": {
+        "case_type": "after_a_death",
         "person": "Rita Demo",
         "story": "Complex: rental property and self-employed work. House sold after death. Probate granted.",
         "demo_answers": {
@@ -122,6 +151,31 @@ FAMILIES = {
              {"executor_name": "Sam Demo", "date_granted": "1 September 2026"}),
         ],
     },
+    "d": {
+        "case_type": "doctors",
+        "person": "Dr Alex Sample",
+        "story": "A doctor with employed NHS work and some locum work. Has a pension savings statement. "
+                 "Pays GMC and indemnity fees.",
+        "demo_answers": {
+            "work_types": ["Employed NHS work", "Locum work"], "usually_filed_sa": "Yes",
+            "pension_statement": "Yes", "fees": ["GMC registration fee", "Medical indemnity"],
+        },
+        "documents": [
+            ("p45_p60", "Sampletown Hospital Trust (fictional)",
+             {"employer": "Sampletown Hospital Trust", "pay_to_date": 62000, "tax_to_date": 12000,
+              "tax_year": "2025 to 2026"}),
+            ("locum_invoice", "Dr Alex Sample (fictional)",
+             {"payer": "Example Medical Practice", "amount": 2400, "invoice_date": "12 February 2026"}),
+            ("pension_savings_statement", "Example Health Pension Scheme (fictional)",
+             {"scheme": "Example Health Pension Scheme", "pension_input_amount": 48000,
+              "tax_year": "2025 to 2026"}),
+            ("gmc_fee", "Sample Medical Register (fictional)",
+             {"organisation": "Sample Medical Register", "amount": 450, "payment_date": "1 July 2025"}),
+            ("indemnity_fee", "Example Medical Indemnity Ltd (fictional)",
+             {"organisation": "Example Medical Indemnity Ltd", "amount": 1200,
+              "payment_date": "1 September 2025"}),
+        ],
+    },
 }
 
 
@@ -131,29 +185,11 @@ def show(field, value):
     return str(value)
 
 
-def watermark(c, width, height):
-    c.saveState()
-    c.setFillColor(Color(0.75, 0.1, 0.1, alpha=0.13))
-    c.setFont("Helvetica-Bold", 38)
-    c.translate(width / 2, height / 2)
-    c.rotate(35)
-    for offset in (-220, 0, 220):
-        c.drawCentredString(0, offset, "SAMPLE - NOT A REAL DOCUMENT")
-    c.restoreState()
-
-
 def make_pdf(path, family, number, doc_type, issuer, fields):
     layout = LAYOUTS[doc_type]
     width, height = A4
     c = canvas.Canvas(str(path), pagesize=A4)
     c.setTitle(f"SAMPLE - {layout['title']}")
-
-    # Red banner at the top
-    c.setFillColor(HexColor("#B42318"))
-    c.rect(0, height - 32, width, 32, stroke=0, fill=1)
-    c.setFillColor(HexColor("#FFFFFF"))
-    c.setFont("Helvetica-Bold", 13)
-    c.drawCentredString(width / 2, height - 21, "SAMPLE - NOT A REAL DOCUMENT - MADE-UP DATA FOR A DEMO")
 
     # Issuer and title
     c.setFillColor(HexColor("#1D2939"))
@@ -179,13 +215,6 @@ def make_pdf(path, family, number, doc_type, issuer, fields):
         c.line(60, y - 10, width - 60, y - 10)
         y -= 36
 
-    # Footer
-    c.setFont("Helvetica-Oblique", 9)
-    c.setFillColor(HexColor("#667085"))
-    c.drawString(60, 50, "This is a made-up sample created for a hackathon demo. It is not a real document "
-                         "and does not relate to a real person.")
-
-    watermark(c, width, height)
     c.showPage()
     c.save()
 
@@ -196,6 +225,7 @@ def main():
         folder.mkdir(parents=True, exist_ok=True)
         expected = {
             "family": family,
+            "case_type": info["case_type"],
             "person": info["person"],
             "story": info["story"],
             "demo_answers": info["demo_answers"],

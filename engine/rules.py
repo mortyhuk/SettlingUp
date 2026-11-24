@@ -1,11 +1,13 @@
 """Turns answers and read documents into results, using rules.yaml and prices.yaml.
 
 Pure Python, no AI. These are DEMO RULES and must be checked by a UK accountant before real use.
+Nothing here knows about one case type: the returns, dates, points and prices all come from the YAML.
 """
 
-from datetime import date
+from datetime import date, timedelta
 
-from engine.flow import checklist, format_date, matches, parse_date
+from engine.extract import show_value
+from engine.flow import checklist, field_label, format_date, matches, parse_date
 
 
 def possessive(answers):
@@ -15,55 +17,87 @@ def possessive(answers):
     return f"{name}'" if name.endswith("s") else f"{name}'s"
 
 
-def tax_year_start(day_of_death, month, day):
-    """The tax year starts on 6 April. A death before 6 April belongs to the previous tax year."""
-    year = day_of_death.year if (day_of_death.month, day_of_death.day) >= (month, day) else day_of_death.year - 1
-    return date(year, month, day)
+def tax_year_start(day, month, day_of_month):
+    """The tax year starts on 6 April. A date before 6 April belongs to the previous tax year."""
+    year = day.year if (day.month, day.day) >= (month, day_of_month) else day.year - 1
+    return date(year, month, day_of_month)
 
 
-def final_return(rules, answers):
-    config = rules["final_return"]
-    key = "likely" if any(matches(c, answers) for c in config["likely_if_any"]) else "check"
-    outcome = config["outcomes"][key]
-    result = {
-        "key": key,
+def outcome_matches(outcome, answers):
+    """when_any: any condition is true. when_all: every condition is true. Neither: always matches."""
+    if "when_any" in outcome:
+        return any(matches(c, answers) for c in outcome["when_any"])
+    if "when_all" in outcome:
+        return all(matches(c, answers) for c in outcome["when_all"])
+    return True
+
+
+def period(config, answers):
+    """The part of a tax year a return covers: from the start of the tax year to a date the person gave."""
+    end = answers.get(config["ends_on"])
+    if not end:
+        return None
+    start = tax_year_start(end, config["tax_year_start"]["month"], config["tax_year_start"]["day"])
+    tax_year = f"{start.year} to {start.year + 1}"
+    return {
+        "start": start.isoformat(),
+        "end": end.isoformat(),
+        "tax_year_end": (start.replace(year=start.year + 1) - timedelta(days=1)).isoformat(),
+        "tax_year": tax_year,
+        "text": config["text"].format(start=format_date(start), end=format_date(end), tax_year=tax_year),
+    }
+
+
+def evaluate_return(config, answers):
+    """One card on the results screen. The first outcome that matches wins."""
+    outcome = next(o for o in config["outcomes"] if outcome_matches(o, answers))
+    return {
+        "id": config["id"],
+        "key": outcome["key"],
         "title": config["title"],
         "status": outcome["status"],
         "text": outcome["text"].replace("{person_possessive}", possessive(answers)),
-        "period": None,
+        "period": period(config["period"], answers) if "period" in config else None,
     }
-    died = answers.get("date_of_death")
-    if died:
-        start = tax_year_start(died, **config["tax_year_start"])
-        result["period"] = {
-            "start": start.isoformat(),
-            "end": died.isoformat(),
-            "tax_year": f"{start.year} to {start.year + 1}",
-            "text": config["period_text"].format(start=format_date(start), end=format_date(died),
-                                                 tax_year=f"{start.year} to {start.year + 1}"),
-        }
-    return result
 
 
-def estate_return(rules, answers):
-    config = rules["estate_return"]
-    if any(matches(c, answers) for c in config["may_be_needed_if_any"]):
-        key = "may_be_needed"
-    elif all(matches(c, answers) for c in config["simpler_if_all"]):
-        key = "simpler"
-    else:
-        key = "not_sure"
-    outcome = config["outcomes"][key]
-    return {"key": key, "title": config["title"], "status": outcome["status"], "text": outcome["text"]}
+def key_dates(config, answers, returns, extracted):
+    """Dates we already know, in date order. They come from an answer, a document we read, or the
+    period of a return. They are facts from the case, not deadlines."""
+    periods = {r["id"]: r["period"] or {} for r in returns}
+    found = []
+    for item in config.get("dates", []):
+        if "question" in item:
+            value = answers.get(item["question"])
+        elif "document" in item:
+            result = extracted.get(item["document"]) or {}
+            value = result["fields"].get(item["field"]) if result.get("read_ok") else None
+        else:
+            value = periods.get(item["return"], {}).get(item["period"])
+        day = parse_date(value) if value else None
+        if day:
+            found.append({"date": day.isoformat(), "text": format_date(day), "label": item["label"]})
+    found.sort(key=lambda d: d["date"])
+    return {"title": config["title"], "text": config["text"], "dates": found}
 
 
-def quote(prices, answers, final_key, estate_key):
+def money(pounds):
+    """169 becomes '£169'. A line that costs nothing is shown as 'Included'."""
+    return f"£{pounds:,}" if pounds else "Included"
+
+
+def quote(prices, answers, returns):
+    """The price lines that apply, and their total. Prices are whole pounds in prices.yaml."""
     lines = list(prices["always"])
-    lines.append(prices["final_return"][final_key])
-    lines.append(prices["estate_return"][estate_key])
-    lines += [{"label": e["label"], "price": e["price"]} for e in prices["extras"] if matches(e["when"], answers)]
-    return {"title": prices["title"], "lines": lines, "total_label": prices["total_label"],
-            "total": prices["total"], "note": prices["note"]}
+    for r in returns:  # one line per return, if prices.yaml has one for that outcome
+        line = prices["returns"].get(r["id"], {}).get(r["key"])
+        if line:
+            lines.append(line)
+    lines += [e for e in prices["extras"] if matches(e["when"], answers)]
+    total = sum(line["price"] for line in lines)
+    return {"title": prices["title"], "total_label": prices["total_label"], "note": prices["note"],
+            "lines": [{"label": line["label"], "price": money(line["price"])} for line in lines],
+            "total": f"£{total:,}"}
 
 
 def date_check(doc, result, answers):
@@ -85,6 +119,11 @@ def date_check(doc, result, answers):
     return {"same": False, "text": check["different"].format(**words), "point": check["point"].format(**words)}
 
 
+def needs_confirming(result):
+    """True if we read values from the document and the person has not yet said they are right."""
+    return bool(result and result.get("read_ok") and not result.get("confirmed"))
+
+
 def documents_status(case, answers, extracted):
     """Each checklist item with its status: added, missing, or added but needs a look."""
     rows = []
@@ -93,7 +132,8 @@ def documents_status(case, answers, extracted):
         check = date_check(doc, result, answers)
         if not result:
             status = "missing"
-        elif result.get("read_ok") is False or result.get("missing_fields") or (check and not check["same"]):
+        elif (result.get("read_ok") is False or result.get("missing_fields") or needs_confirming(result)
+              or (check and not check["same"])):
             status = "check"
         else:
             status = "added"
@@ -107,25 +147,31 @@ def points_to_check(rules, answers, docs):
     config = rules["accountant_points"]
     points = [p["text"] for p in config["by_answer"] if matches(p["when"], answers)]
     for doc in docs:
+        result = doc["result"] or {}
         if doc["check"] and not doc["check"]["same"]:
             points.append(doc["check"]["point"])
-        elif doc["status"] == "check":
+        if result.get("read_ok") is False or result.get("missing_fields"):
             points.append(config["document_needs_look"].format(label=doc["label"]))
+        elif needs_confirming(result):
+            points.append(config["document_not_confirmed"].format(label=doc["label"]))
+        for field, change in (result.get("corrections") or {}).items():
+            points.append(config["document_corrected"].format(
+                label=doc["label"], field=field_label(field).lower(),
+                read=show_value(change["read"]), given=change["given"]))
     return points
 
 
 def evaluate(case, answers, extracted):
     rules, prices = case["rules"], case["prices"]
-    final = final_return(rules, answers)
-    estate = estate_return(rules, answers)
+    returns = [evaluate_return(config, answers) for config in rules["returns"]]
     docs = documents_status(case, answers, extracted)
     return {
-        "label": rules["label"],
-        "final_return": final,
-        "estate_return": estate,
-        "key_dates": rules["key_dates"],
+        "rules_version": rules["version"],
+        "rules_reviewed_by": rules.get("reviewed_by") or "",
+        "returns": returns,
+        "key_dates": key_dates(rules["key_dates"], answers, returns, extracted),
         "documents": docs,
         "missing_documents": [d["label"] for d in docs if d["status"] == "missing"],
         "points_to_check": points_to_check(rules, answers, docs),
-        "quote": quote(prices, answers, final["key"], estate["key"]),
+        "quote": quote(prices, answers, returns),
     }

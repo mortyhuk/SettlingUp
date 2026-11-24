@@ -1,5 +1,6 @@
 # Which documents to ask for, based on the answers.
 # reads_as: the document type the reader looks for (see engine/extract.py). Empty means we do not read it.
+# fields: the details the reader looks for in that document.
 # found: how to describe what was read, in plain words. {field} is replaced with the value.
 # check_date (optional): compare a date we read (field) with a date the person gave (question).
 #   same / different are shown to the person. point goes in the accountant's pack if they differ.
@@ -9,6 +10,7 @@ always:
     label: Death certificate
     hint: A copy is fine.
     reads_as: death_certificate
+    fields: [full_name, date_of_death]
     found: "{full_name}, died {date_of_death}"
     check_date:
       field: date_of_death
@@ -26,11 +28,13 @@ by_answer:
         label: Last payslip
         hint: The most recent one you can find.
         reads_as: payslip
+        fields: [employer, pay_to_date, tax_to_date, tax_year]
         found: "£{pay_to_date} pay so far this tax year from {employer}"
       - id: p45_p60
         label: P45 or P60
         hint: The employer usually sends a P45 after someone dies.
         reads_as: p45_p60
+        fields: [employer, pay_to_date, tax_to_date, tax_year]
         found: "£{pay_to_date} pay and £{tax_to_date} tax from {employer}"
 
   - when: {question: income_types, includes: pension}
@@ -39,6 +43,7 @@ by_answer:
         label: Pension statements
         hint: A yearly statement or a recent letter from the pension provider.
         reads_as: pension_statement
+        fields: [provider, annual_amount, tax_deducted]
         found: "£{annual_amount} a year from {provider}, £{tax_deducted} tax taken off"
 
   - when: {question: income_types, includes: self_employed}
@@ -55,6 +60,7 @@ by_answer:
         label: Rental income and costs
         hint: A letting agent statement or their own records.
         reads_as: rental_summary
+        fields: [rent_received, expenses, period]
         found: "£{rent_received} rent and £{expenses} costs, {period}"
 
   - when: {question: income_types, includes: savings}
@@ -63,6 +69,7 @@ by_answer:
         label: Interest letters from banks or building societies
         hint: Many banks will send one if you ask.
         reads_as: interest_letter
+        fields: [bank, interest_amount, tax_year]
         found: "£{interest_amount} interest from {bank}, tax year {tax_year}"
 
   - when: {question: income_types, includes: shares}
@@ -71,6 +78,7 @@ by_answer:
         label: Share statements and dividend vouchers
         hint: From the company, a broker or the share registrar.
         reads_as: dividend_statement
+        fields: [company, dividend_amount, payment_date]
         found: "£{dividend_amount} dividend from {company}, paid {payment_date}"
 
   - when: {question: anything_sold, equals: "yes"}
@@ -79,6 +87,7 @@ by_answer:
         label: Sale or completion statement
         hint: The solicitor or estate agent will have this.
         reads_as: sale_statement
+        fields: [asset, sale_date, sale_price]
         found: "{asset}, sold for £{sale_price} on {sale_date}"
 
   - when: {question: probate, equals: "yes"}
@@ -87,4 +96,5 @@ by_answer:
         label: Grant of probate or letters of administration
         hint: A copy is fine.
         reads_as: grant_of_probate
+        fields: [executor_name, date_granted]
         found: "Granted to {executor_name} on {date_granted}"

@@ -1,0 +1,77 @@
+# Which documents to ask for, based on the answers.
+# reads_as: the document type the reader looks for (see engine/extract.py). Empty means we do not read it.
+# fields: the details the reader looks for in that document.
+# found: how to describe what was read, in plain words. {field} is replaced with the value.
+
+always: []
+
+by_answer:
+  - when: {question: work_types, includes: nhs}
+    documents:
+      - id: p45_p60
+        label: P60 from your NHS employer
+        hint: Your employer gives you this after the end of each tax year.
+        reads_as: p45_p60
+        fields: [employer, pay_to_date, tax_to_date, tax_year]
+        found: "£{pay_to_date} pay and £{tax_to_date} tax from {employer}, tax year {tax_year}"
+
+  - when: {question: work_types, includes: locum}
+    documents:
+      - id: locum_invoice
+        label: Locum invoices
+        hint: The invoices you sent, or a summary from your agency.
+        reads_as: locum_invoice
+        fields: [payer, amount, invoice_date]
+        found: "£{amount} invoiced to {payer} on {invoice_date}"
+
+  - when: {question: work_types, includes: private}
+    documents:
+      - id: private_practice_records
+        label: Private practice income and costs records
+        hint: Any records, spreadsheets or summaries you have.
+        reads_as:
+        found: ""
+
+  - when: {question: work_types, includes: gp_partner}
+    documents:
+      - id: partnership_statement
+        label: Partnership accounts or profit share statement
+        hint: Your practice manager or the practice accountant will have this.
+        reads_as:
+        found: ""
+
+  - when: {question: pension_statement, equals: "yes"}
+    documents:
+      - id: pension_savings_statement
+        label: Pension savings statement
+        hint: The letter from your pension scheme.
+        reads_as: pension_savings_statement
+        fields: [scheme, pension_input_amount, tax_year]
+        found: "£{pension_input_amount} pension savings with {scheme}, tax year {tax_year}"
+
+  - when: {question: fees, includes: gmc}
+    documents:
+      - id: gmc_fee
+        label: GMC registration fee receipt
+        hint: An email receipt is fine.
+        reads_as: gmc_fee
+        fields: [organisation, amount, payment_date]
+        found: "£{amount} paid to {organisation} on {payment_date}"
+
+  - when: {question: fees, includes: indemnity}
+    documents:
+      - id: indemnity_fee
+        label: Medical indemnity receipt
+        hint: A renewal letter or receipt from your indemnity provider.
+        reads_as: indemnity_fee
+        fields: [organisation, amount, payment_date]
+        found: "£{amount} paid to {organisation} on {payment_date}"
+
+  - when: {question: fees, includes: membership}
+    documents:
+      - id: membership_fee
+        label: BMA or royal college membership receipt
+        hint: An email receipt is fine.
+        reads_as: membership_fee
+        fields: [organisation, amount, payment_date]
+        found: "£{amount} paid to {organisation} on {payment_date}"

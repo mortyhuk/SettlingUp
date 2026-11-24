@@ -1,0 +1,106 @@
+# Screens and questions for the "doctors" case type.
+# kind: welcome | questions | documents | results | pack | thanks
+# step: the number shown in "Step X of <steps_total>" (welcome and thanks have none).
+
+name: doctors
+service_name: Tax returns for doctors
+app_title: One step at a time
+# Made-up sample families in data/families/ for this case type. default_family is used for document
+# reading when an uploaded file name does not start with a family letter.
+sample_families: [d]
+default_family: d
+steps_total: 5
+
+screens:
+  - id: welcome
+    kind: welcome
+    title: Your tax return, one step at a time
+    body: |
+      Doctors often have more than one kind of income, and it can be hard to keep track.
+
+      We will ask a few questions and look at your documents. Then we will show you what is
+      likely to be needed and gather what an accountant will ask for.
+
+      It takes about 10 minutes. You can go back at any point.
+    button: Start
+
+  - id: work
+    kind: questions
+    step: 1
+    title: Your work
+    intro: Think about the tax year you would like help with. Tick all that apply.
+    questions:
+      - id: work_types
+        type: checkboxes
+        label: What kind of work did you do?
+        required: true
+        options:
+          - {value: nhs, label: Employed NHS work}
+          - {value: locum, label: Locum work}
+          - {value: private, label: Private practice}
+          - {value: gp_partner, label: Work as a GP partner}
+          - {value: not_sure, label: Not sure}
+      - id: usually_filed_sa
+        type: radio
+        label: Do you usually send a Self Assessment tax return?
+        hint: This is the yearly tax return sent to HMRC.
+        required: true
+        options:
+          - {value: "yes", label: "Yes"}
+          - {value: "no", label: "No"}
+          - {value: not_sure, label: Not sure}
+
+  - id: pension_and_fees
+    kind: questions
+    step: 2
+    title: Pension and professional fees
+    intro: If you are not sure about any of these, that is fine. An accountant can check.
+    questions:
+      - id: pension_statement
+        type: radio
+        label: Have you had a pension savings statement?
+        hint: This is a letter from your pension scheme showing how much your pension grew in the year.
+        required: true
+        options:
+          - {value: "yes", label: "Yes"}
+          - {value: "no", label: "No"}
+          - {value: not_sure, label: Not sure}
+      - id: fees
+        type: checkboxes
+        label: Which of these do you pay for yourself?
+        required: true
+        options:
+          - {value: gmc, label: GMC registration fee}
+          - {value: indemnity, label: Medical indemnity}
+          - {value: membership, label: BMA or royal college membership}
+          - {value: none, label: None of these}
+
+  - id: documents
+    kind: documents
+    step: 3
+    title: Your documents
+    intro: >-
+      Based on your answers, these are the documents an accountant will want to see.
+      Add what you have now. Anything missing can be sent later.
+
+  - id: results
+    kind: results
+    step: 4
+    title: What is likely to be needed
+    intro: Based on your answers and documents. Nothing here is final until an accountant has checked it.
+
+  - id: pack
+    kind: pack
+    step: 5
+    title: Your pack for an accountant
+    intro: We have put everything together so an accountant can pick it up from here.
+
+  - id: thanks
+    kind: thanks
+    title: Thank you
+    intro: Here is what happens next.
+    steps:
+      - An accountant reads your pack and documents.
+      - They confirm what is needed and your fixed fee.
+      - They contact you to agree the next steps.
+    closing: There is no rush. You can send anything that is missing later.

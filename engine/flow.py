@@ -18,8 +18,24 @@ def load_case_type(name):
     return case
 
 
+def case_type_names():
+    """Every case type we have: each folder in engine/case_types/ with a questions.yaml."""
+    return sorted(p.name for p in CASE_TYPES_DIR.iterdir() if (p / "questions.yaml").exists())
+
+
+def service_name(name):
+    """The name of a case type in plain words, e.g. 'Tax after a death'."""
+    with open(CASE_TYPES_DIR / name / "questions.yaml", encoding="utf-8") as f:
+        return yaml.safe_load(f)["service_name"]
+
+
 def screens(case):
     return case["questions"]["screens"]
+
+
+def kind_index(case, kind):
+    """The first screen of a kind, e.g. the documents screen."""
+    return next(i for i, screen in enumerate(screens(case)) if screen["kind"] == kind)
 
 
 def screen_index(case, screen_id):
@@ -104,6 +120,21 @@ def answer_summary(case, answers):
 
 def format_date(d):
     return f"{d.day} {d:%B %Y}"
+
+
+def field_label(field):
+    """'annual_amount' becomes 'Annual amount'."""
+    return field.replace("_", " ").capitalize()
+
+
+def restore_answers(case, saved):
+    """Answers loaded from the database have dates as text. Turn those back into dates."""
+    answers = dict(saved)
+    for screen in screens(case):
+        for question in screen.get("questions", []):
+            if question["type"] == "date" and answers.get(question["id"]):
+                answers[question["id"]] = parse_date(answers[question["id"]])
+    return answers
 
 
 def parse_date(value):

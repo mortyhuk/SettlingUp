@@ -4,8 +4,12 @@
 # {person} in a label becomes the first name, or "they" if no name was given.
 
 name: after_a_death
+service_name: Tax after a death
 app_title: One step at a time
-demo_banner: "Demo only. Everything here uses made-up examples."
+# Made-up sample families in data/families/ for this case type. default_family is used for document
+# reading when an uploaded file name does not start with a family letter.
+sample_families: [a, b, c]
+default_family: b
 steps_total: 7
 
 screens:

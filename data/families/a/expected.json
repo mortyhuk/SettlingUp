@@ -1,5 +1,6 @@
 {
   "family": "a",
+  "case_type": "after_a_death",
   "person": "Joan Example",
   "story": "Simple: a pension only. No estate income, nothing sold, probate not needed.",
   "demo_answers": {

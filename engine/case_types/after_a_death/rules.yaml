@@ -1,60 +1,77 @@
 # DEMO RULES ONLY. These are not real tax rules. A UK accountant must check them before real use.
 # Conditions use the same shape as documents.yaml: {question: id, equals: value} or {question: id, includes: value}.
 
-label: "Demo rules only. These are not real tax rules, and a UK accountant will check everything."
+# Change the version whenever a rule changes. Every handover pack records the version it used.
+# reviewed_by is the accountant who has checked this version. Leave it empty until someone has.
+version: "0.1"
+reviewed_by: ""
 
-final_return:
-  title: Final personal tax return
-  # "Likely needed" if ANY of these match. Otherwise "We'll check".
-  likely_if_any:
-    - {question: usually_filed_sa, equals: "yes"}
-    - {question: income_types, includes: self_employed}
-    - {question: income_types, includes: rental}
-    - {question: income_types, includes: shares}
-  outcomes:
-    likely:
-      status: Likely needed
-      text: >-
-        A final tax return is likely to be needed for the last part of {person_possessive} life.
-        An accountant will confirm this.
-    check:
-      status: We'll check
-      text: >-
-        A final tax return may not be needed, but we will check this for you.
-        An accountant will confirm.
-  # The tax year starts on 6 April. A death before 6 April belongs to the previous tax year.
-  tax_year_start: {month: 4, day: 6}
-  period_text: "It covers {start} to {end} (tax year {tax_year})."
+# Each item is one card on the results screen. Outcomes are tried in order and the first match wins.
+#   when_any: matches if ANY of the conditions is true.
+#   when_all: matches if ALL of the conditions are true.
+#   An outcome with neither always matches, so it goes last.
+returns:
+  - id: final_return
+    title: Final personal tax return
+    outcomes:
+      - key: likely
+        when_any:
+          - {question: usually_filed_sa, equals: "yes"}
+          - {question: income_types, includes: self_employed}
+          - {question: income_types, includes: rental}
+          - {question: income_types, includes: shares}
+        status: Likely needed
+        text: >-
+          A final tax return is likely to be needed for the last part of {person_possessive} life.
+          An accountant will confirm this.
+      - key: check
+        status: We'll check
+        text: >-
+          A final tax return may not be needed, but we will check this for you.
+          An accountant will confirm.
+    # The return covers the start of the tax year up to a date the person gave (ends_on is a question id).
+    # The tax year starts on 6 April. A death before 6 April belongs to the previous tax year.
+    period:
+      ends_on: date_of_death
+      tax_year_start: {month: 4, day: 6}
+      text: "It covers {start} to {end} (tax year {tax_year})."
 
-estate_return:
-  title: Estate tax return
-  # "May be needed" if ANY of these match.
-  may_be_needed_if_any:
-    - {question: anything_sold, equals: "yes"}
-    - {question: estate_income, equals: some}
-  # "Probably a simpler route" if ALL of these match.
-  simpler_if_all:
-    - {question: estate_income, equals: none}
-    - {question: anything_sold, equals: "no"}
-  outcomes:
-    may_be_needed:
-      status: May be needed
-      text: >-
-        As the estate has had some income or sold something, it may need its own tax return.
-        An accountant will confirm whether it is needed.
-    simpler:
-      status: Probably a simpler route
-      text: >-
-        With no estate income and nothing sold, there is probably a simpler route than a full
-        estate return. An accountant will confirm.
-    not_sure:
-      status: Not sure yet
-      text: >-
-        We need a little more information to know. An accountant will look at this with you.
+  - id: estate_return
+    title: Estate tax return
+    outcomes:
+      - key: may_be_needed
+        when_any:
+          - {question: anything_sold, equals: "yes"}
+          - {question: estate_income, equals: some}
+        status: May be needed
+        text: >-
+          As the estate has had some income or sold something, it may need its own tax return.
+          An accountant will confirm whether it is needed.
+      - key: simpler
+        when_all:
+          - {question: estate_income, equals: none}
+          - {question: anything_sold, equals: "no"}
+        status: Probably a simpler route
+        text: >-
+          With no estate income and nothing sold, there is probably a simpler route than a full
+          estate return. An accountant will confirm.
+      - key: not_sure
+        status: Not sure yet
+        text: >-
+          We need a little more information to know. An accountant will look at this with you.
 
 key_dates:
   title: Key dates
   text: Your accountant will confirm the deadline for each return.
+  # Dates we already know, shown in date order. Each comes from an answer (question), a document we
+  # read (document + field) or the period of a return above (return + period: start, end or
+  # tax_year_end). These are facts from the case, not deadlines. Dates we do not have are left out.
+  dates:
+    - {label: The tax year of the final return starts, return: final_return, period: start}
+    - {label: The date they died, question: date_of_death}
+    - {label: Probate granted, document: grant_of_probate, field: date_granted}
+    - {label: Sale completed, document: sale_statement, field: sale_date}
+    - {label: That tax year ends, return: final_return, period: tax_year_end}
 
 # Short notes for the accountant, shown in the handover pack under "Points to check".
 # These only repeat what the person told us or what a document showed. They are not tax rules.
@@ -77,3 +94,5 @@ accountant_points:
     - when: {question: probate, equals: not_sure}
       text: Not sure whether probate has been granted.
   document_needs_look: "{label}: this could not be read fully. Please look at the original."
+  document_not_confirmed: "{label}: read automatically, but the person has not confirmed the details."
+  document_corrected: "{label}: the person changed the {field} from {read} to {given}."

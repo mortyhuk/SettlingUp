@@ -1,0 +1,76 @@
+{
+  "family": "d",
+  "case_type": "doctors",
+  "person": "Dr Alex Sample",
+  "story": "A doctor with employed NHS work and some locum work. Has a pension savings statement. Pays GMC and indemnity fees.",
+  "demo_answers": {
+    "work_types": [
+      "Employed NHS work",
+      "Locum work"
+    ],
+    "usually_filed_sa": "Yes",
+    "pension_statement": "Yes",
+    "fees": [
+      "GMC registration fee",
+      "Medical indemnity"
+    ]
+  },
+  "documents": {
+    "p45_p60": {
+      "file": "d_p45_p60.pdf",
+      "document_type": "p45_p60",
+      "fields": {
+        "employer": "Sampletown Hospital Trust",
+        "pay_to_date": 62000,
+        "tax_to_date": 12000,
+        "tax_year": "2025 to 2026"
+      },
+      "missing_fields": [],
+      "confidence": "high"
+    },
+    "locum_invoice": {
+      "file": "d_locum_invoice.pdf",
+      "document_type": "locum_invoice",
+      "fields": {
+        "payer": "Example Medical Practice",
+        "amount": 2400,
+        "invoice_date": "12 February 2026"
+      },
+      "missing_fields": [],
+      "confidence": "high"
+    },
+    "pension_savings_statement": {
+      "file": "d_pension_savings_statement.pdf",
+      "document_type": "pension_savings_statement",
+      "fields": {
+        "scheme": "Example Health Pension Scheme",
+        "pension_input_amount": 48000,
+        "tax_year": "2025 to 2026"
+      },
+      "missing_fields": [],
+      "confidence": "high"
+    },
+    "gmc_fee": {
+      "file": "d_gmc_fee.pdf",
+      "document_type": "gmc_fee",
+      "fields": {
+        "organisation": "Sample Medical Register",
+        "amount": 450,
+        "payment_date": "1 July 2025"
+      },
+      "missing_fields": [],
+      "confidence": "high"
+    },
+    "indemnity_fee": {
+      "file": "d_indemnity_fee.pdf",
+      "document_type": "indemnity_fee",
+      "fields": {
+        "organisation": "Example Medical Indemnity Ltd",
+        "amount": 1200,
+        "payment_date": "1 September 2025"
+      },
+      "missing_fields": [],
+      "confidence": "high"
+    }
+  }
+}
