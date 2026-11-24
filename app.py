@@ -19,6 +19,7 @@ CSS = """
 h1, h2, h3 { color: #134E4A !important; }
 [data-testid="stToolbar"], footer, #MainMenu { display: none !important; }
 header[data-testid="stHeader"] { background: transparent; }
+[data-testid="stHeaderActionElements"] { display: none !important; }
 .block-container { padding-top: 2.5rem; max-width: 760px; }
 [class*="st-key-card"] { background: #FFFFFF; border-radius: 14px; padding: 1.4rem 1.6rem; border: 1px solid #D5E6DE; }
 .stButton button, .stDownloadButton button { min-height: 3.1rem; border-radius: 10px; }
@@ -298,6 +299,12 @@ def main():
     case = st.session_state.case
     index = st.session_state.screen
     screen = flow.screens(case)[index]
+    if st.session_state.get("shown_screen") != index:
+        # A new screen: start at the top of the page.
+        st.session_state.shown_screen = index
+        st.html(f"<script>/* screen {index} */ window.scrollTo(0, 0);"
+                "document.querySelector('[data-testid=\"stMain\"]')?.scrollTo(0, 0);</script>",
+                unsafe_allow_javascript=True)
     demo_banner(case)
     progress(case, screen)
     SCREENS[screen["kind"]](case, screen, index)
