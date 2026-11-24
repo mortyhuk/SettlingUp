@@ -1,0 +1,57 @@
+# DEMO RULES ONLY. These are not real tax rules. A UK accountant must check them before real use.
+# Conditions use the same shape as documents.yaml: {question: id, equals: value} or {question: id, includes: value}.
+
+label: "Demo rules only. These are not real tax rules, and a UK accountant will check everything."
+
+final_return:
+  title: Final personal tax return
+  # "Likely needed" if ANY of these match. Otherwise "We'll check".
+  likely_if_any:
+    - {question: usually_filed_sa, equals: "yes"}
+    - {question: income_types, includes: self_employed}
+    - {question: income_types, includes: rental}
+    - {question: income_types, includes: shares}
+  outcomes:
+    likely:
+      status: Likely needed
+      text: >-
+        A final tax return is likely to be needed for the last part of {person_possessive} life.
+        An accountant will confirm this.
+    check:
+      status: We'll check
+      text: >-
+        A final tax return may not be needed, but we will check this for you.
+        An accountant will confirm.
+  # The tax year starts on 6 April. A death before 6 April belongs to the previous tax year.
+  tax_year_start: {month: 4, day: 6}
+  period_text: "It covers {start} to {end} (tax year {tax_year})."
+
+estate_return:
+  title: Estate tax return
+  # "May be needed" if ANY of these match.
+  may_be_needed_if_any:
+    - {question: anything_sold, equals: "yes"}
+    - {question: estate_income, equals: some}
+  # "Probably a simpler route" if ALL of these match.
+  simpler_if_all:
+    - {question: estate_income, equals: none}
+    - {question: anything_sold, equals: "no"}
+  outcomes:
+    may_be_needed:
+      status: May be needed
+      text: >-
+        Because the estate has had income or something was sold, the estate may need its own
+        tax return. An accountant will confirm whether it is needed.
+    simpler:
+      status: Probably a simpler route
+      text: >-
+        With no estate income and nothing sold, there is probably a simpler route than a full
+        estate return. An accountant will confirm.
+    not_sure:
+      status: Not sure yet
+      text: >-
+        We need a little more information to know. An accountant will look at this with you.
+
+key_dates:
+  title: Key dates
+  text: Your accountant will confirm the deadline for each return.

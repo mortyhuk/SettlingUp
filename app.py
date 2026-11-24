@@ -8,7 +8,7 @@ from datetime import date
 
 import streamlit as st
 
-from engine import extract, flow
+from engine import extract, flow, rules
 
 CASE_TYPE = "after_a_death"
 
@@ -28,7 +28,12 @@ header[data-testid="stHeader"] { background: transparent; }
                padding: 0.35rem 0.8rem; font-size: 15px; display: inline-block; margin-bottom: 1rem; }
 .tag { display: inline-block; padding: 0.2rem 0.7rem; border-radius: 999px; font-size: 15px; font-weight: 600; }
 .tag-likely { background: #CCE7E1; color: #134E4A; }
-.tag-check { background: #FDF1D6; color: #7A4B00; }
+.demo-rules { background: #FDF1D6; color: #7A4B00; border-radius: 8px; padding: 0.6rem 0.9rem;
+              font-weight: 600; margin-bottom: 1rem; }
+table.quote { width: 100%; border-collapse: collapse; margin: 0.4rem 0; }
+table.quote td { border: none; border-bottom: 1px solid #E4EEE9; padding: 0.55rem 0.2rem; }
+table.quote td.price { text-align: right; white-space: nowrap; color: #475467; }
+table.quote tr.total td { font-weight: 700; border-bottom: none; color: #134E4A; }
 .muted { color: #475467 !important; font-size: 16px !important; }
 </style>
 """
@@ -192,6 +197,44 @@ def show_documents(case, screen, index):
     nav_buttons(case, index)
 
 
+def result_card(key, item, extra=None):
+    with st.container(key=f"card_{key}"):
+        st.markdown(f"**{item['title']}**")
+        st.markdown(f'<span class="tag tag-likely">{item["status"]}</span>', unsafe_allow_html=True)
+        st.write(item["text"])
+        if extra:
+            st.markdown(f'<p class="muted">{extra}</p>', unsafe_allow_html=True)
+
+
+def show_results(case, screen, index):
+    results = rules.evaluate(case, st.session_state.answers, st.session_state.extracted)
+    st.header(screen["title"])
+    st.markdown(f'<div class="demo-rules">{results["label"]}</div>', unsafe_allow_html=True)
+
+    final = results["final_return"]
+    result_card("final", final, final["period"]["text"] if final["period"] else None)
+    result_card("estate", results["estate_return"])
+    with st.container(key="card_dates"):
+        st.markdown(f"**{results['key_dates']['title']}**")
+        st.write(results["key_dates"]["text"])
+
+    if results["missing_documents"]:
+        with st.container(key="card_missing"):
+            st.markdown("**Still to send**")
+            st.write("That is fine. You can send these to your accountant later:")
+            st.markdown("\n".join(f"- {label}" for label in results["missing_documents"]))
+
+    q = results["quote"]
+    with st.container(key="card_quote"):
+        st.markdown(f"**{q['title']}**")
+        rows = "".join(f"<tr><td>{line['label']}</td><td class='price'>{line['price']}</td></tr>"
+                       for line in q["lines"])
+        rows += f"<tr class='total'><td>{q['total_label']}</td><td class='price'>{q['total']}</td></tr>"
+        st.markdown(f"<table class='quote'>{rows}</table>", unsafe_allow_html=True)
+        st.caption(q["note"])
+    nav_buttons(case, index)
+
+
 def show_placeholder(case, screen, index):
     st.header(screen["title"])
     with st.container(key=f"card_{screen['id']}"):
@@ -214,7 +257,7 @@ SCREENS = {
     "welcome": show_welcome,
     "questions": show_questions,
     "documents": show_documents,
-    "results": show_placeholder,
+    "results": show_results,
     "pack": show_placeholder,
     "thanks": show_thanks,
 }

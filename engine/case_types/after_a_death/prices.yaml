@@ -1,0 +1,29 @@
+# Quote prices. [PRICE] is a placeholder until real prices are agreed.
+
+title: Your fixed-fee quote
+note: "Demo prices: [PRICE] will be replaced with real fixed fees."
+total_label: Total fixed fee
+total: "[PRICE]"
+
+always:
+  - {label: Checking your documents and preparing the handover, price: "[PRICE]"}
+
+final_return:
+  likely: {label: Final personal tax return, price: "[PRICE]"}
+  check: {label: Checking whether a final return is needed, price: "[PRICE]"}
+
+estate_return:
+  may_be_needed: {label: Estate tax return (only if needed), price: "[PRICE]"}
+  simpler: {label: Help with the simpler route for the estate, price: "[PRICE]"}
+  not_sure: {label: Checking whether an estate return is needed, price: "[PRICE]"}
+
+extras:
+  - when: {question: income_types, includes: self_employed}
+    label: Self-employed income
+    price: "[PRICE]"
+  - when: {question: income_types, includes: rental}
+    label: Rental property income
+    price: "[PRICE]"
+  - when: {question: anything_sold, equals: "yes"}
+    label: Sale of a house or shares
+    price: "[PRICE]"
