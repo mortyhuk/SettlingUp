@@ -5,7 +5,7 @@ Pure Python, no AI. These are DEMO RULES and must be checked by a UK accountant 
 
 from datetime import date
 
-from engine.flow import checklist, format_date, matches
+from engine.flow import checklist, format_date, matches, parse_date
 
 
 def possessive(answers):
@@ -66,19 +66,52 @@ def quote(prices, answers, final_key, estate_key):
             "total": prices["total"], "note": prices["note"]}
 
 
+def date_check(doc, result, answers):
+    """Compare a date read from a document with a date the person gave, if documents.yaml asks for it.
+
+    Returns None when there is nothing to compare. Otherwise {"same": True or False, "text": for the
+    person, "point": for the accountant}.
+    """
+    check = doc.get("check_date")
+    if not check or not result or not result.get("read_ok"):
+        return None
+    found = parse_date(result["fields"].get(check["field"]))
+    given = answers.get(check["question"])
+    if not found or not given:
+        return None
+    if found == given:
+        return {"same": True, "text": check["same"], "point": ""}
+    words = {"found": format_date(found), "given": format_date(given)}
+    return {"same": False, "text": check["different"].format(**words), "point": check["point"].format(**words)}
+
+
 def documents_status(case, answers, extracted):
     """Each checklist item with its status: added, missing, or added but needs a look."""
     rows = []
     for doc in checklist(case, answers):
         result = extracted.get(doc["id"])
+        check = date_check(doc, result, answers)
         if not result:
             status = "missing"
-        elif result.get("read_ok") is False or result.get("missing_fields"):
+        elif result.get("read_ok") is False or result.get("missing_fields") or (check and not check["same"]):
             status = "check"
         else:
             status = "added"
-        rows.append({"id": doc["id"], "label": doc["label"], "status": status, "result": result})
+        rows.append({"id": doc["id"], "label": doc["label"], "status": status, "result": result,
+                     "check": check})
     return rows
+
+
+def points_to_check(rules, answers, docs):
+    """Short notes for the accountant: uncertain answers and documents that need a look. No tax rules here."""
+    config = rules["accountant_points"]
+    points = [p["text"] for p in config["by_answer"] if matches(p["when"], answers)]
+    for doc in docs:
+        if doc["check"] and not doc["check"]["same"]:
+            points.append(doc["check"]["point"])
+        elif doc["status"] == "check":
+            points.append(config["document_needs_look"].format(label=doc["label"]))
+    return points
 
 
 def evaluate(case, answers, extracted):
@@ -93,5 +126,6 @@ def evaluate(case, answers, extracted):
         "key_dates": rules["key_dates"],
         "documents": docs,
         "missing_documents": [d["label"] for d in docs if d["status"] == "missing"],
+        "points_to_check": points_to_check(rules, answers, docs),
         "quote": quote(prices, answers, final["key"], estate["key"]),
     }

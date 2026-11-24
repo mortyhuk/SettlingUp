@@ -55,3 +55,25 @@ estate_return:
 key_dates:
   title: Key dates
   text: Your accountant will confirm the deadline for each return.
+
+# Short notes for the accountant, shown in the handover pack under "Points to check".
+# These only repeat what the person told us or what a document showed. They are not tax rules.
+accountant_points:
+  by_answer:
+    - when: {question: role, equals: not_sure}
+      text: The person filling this in is not sure yet whether they are the executor.
+    - when: {question: lived_in_uk, equals: "no"}
+      text: The person who died lived outside the UK. A specialist should check this.
+    - when: {question: income_types, includes: not_sure}
+      text: Not sure about every source of income before the death.
+    - when: {question: usually_filed_sa, equals: not_sure}
+      text: Not sure whether a Self Assessment return was usually sent.
+    - when: {question: estate_income, equals: not_sure}
+      text: Not sure whether the estate has had any income yet.
+    - when: {question: anything_sold, equals: not_sure}
+      text: Not sure whether anything has been sold.
+    - when: {question: probate, equals: not_yet}
+      text: Probate has not been granted yet.
+    - when: {question: probate, equals: not_sure}
+      text: Not sure whether probate has been granted.
+  document_needs_look: "{label}: this could not be read fully. Please look at the original."

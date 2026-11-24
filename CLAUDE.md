@@ -49,6 +49,7 @@ engine/
   pack.py                       builds the handover pack (JSON + PDF)
 data/families/a|b|c/            made-up documents + expected.json per family
 scripts/make_documents.py       creates the sample PDFs
+scripts/check_demo.py           quick check of Families A, B and C before recording
 out/                            generated handover packs (git-ignored)
 ```
 The engine is built around "case types" so a second case type (doctors' returns) can be added later
@@ -118,6 +119,15 @@ streamlit run app.py
 - Lived in the UK = No shows a kind note and the flow carries on.
 - Self-employed income and costs records are uploaded but not read; the accountant reads them.
 - A death on 1 to 5 April belongs to the previous tax year (final return period starts 6 April of the year before).
+- The date read from the death certificate is compared with the date the person gave (check_date in
+  documents.yaml). If they differ, the screen shows a kind note and the document is marked "needs a look".
+- The pack has a "Points to check" section for the accountant: "not sure" answers, lived outside the UK,
+  probate not granted yet, and documents that need a look. The wording is in rules.yaml
+  (accountant_points). These only repeat answers and document facts. They are not tax rules.
+- The first name is escaped before it is shown inside HTML labels.
+- Family B's interest letter is for tax year 2026 to 2027, to match the final return period.
+- `python scripts/check_demo.py` runs Families A, B and C through the engine without the screens.
+  Run it before recording. It should end with "All good. Ready to record."
 
 ## Definition of done
 Family B can be run start to finish in under 90 seconds: answers, uploads, AI reading (or mock),

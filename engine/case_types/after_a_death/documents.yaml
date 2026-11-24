@@ -1,6 +1,8 @@
 # Which documents to ask for, based on the answers.
 # reads_as: the document type the reader looks for (see engine/extract.py). Empty means we do not read it.
 # found: how to describe what was read, in plain words. {field} is replaced with the value.
+# check_date (optional): compare a date we read (field) with a date the person gave (question).
+#   same / different are shown to the person. point goes in the accountant's pack if they differ.
 
 always:
   - id: death_certificate
@@ -8,6 +10,14 @@ always:
     hint: A copy is fine.
     reads_as: death_certificate
     found: "{full_name}, died {date_of_death}"
+    check_date:
+      field: date_of_death
+      question: date_of_death
+      same: This matches the date you gave us.
+      different: >-
+        The certificate shows {found}, and the date you gave us was {given}.
+        That is fine. Your accountant will check this with you.
+      point: "Date of death: the certificate shows {found}, but the answer given was {given}."
 
 by_answer:
   - when: {question: income_types, includes: job}

@@ -91,7 +91,7 @@ FAMILIES = {
             ("pension_statement", "Example Pensions Ltd",
              {"provider": "Example Pensions Ltd", "annual_amount": 18000, "tax_deducted": 1100}),
             ("interest_letter", "Sampletown Building Society",
-             {"bank": "Sampletown Building Society", "interest_amount": 600, "tax_year": "2025 to 2026"}),
+             {"bank": "Sampletown Building Society", "interest_amount": 600, "tax_year": "2026 to 2027"}),
             ("dividend_statement", "Demo Holdings plc",
              {"company": "Demo Holdings plc", "dividend_amount": 400, "payment_date": "1 June 2026"}),
             ("grant_of_probate", "Sampletown Probate Registry (fictional)",

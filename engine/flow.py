@@ -1,5 +1,6 @@
 """Loads a case type and works out screens, next/back, completeness and the document checklist."""
 
+from datetime import date, datetime
 from pathlib import Path
 
 import yaml
@@ -103,3 +104,15 @@ def answer_summary(case, answers):
 
 def format_date(d):
     return f"{d.day} {d:%B %Y}"
+
+
+def parse_date(value):
+    """Turn '14 August 2026', '2026-08-14' or '14/08/2026' into a date. None if it is not a date we know."""
+    if isinstance(value, date):
+        return value
+    for pattern in ("%d %B %Y", "%Y-%m-%d", "%d/%m/%Y"):
+        try:
+            return datetime.strptime(str(value).strip(), pattern).date()
+        except ValueError:
+            pass
+    return None

@@ -5,6 +5,7 @@ engine/case_types/<case type>/ and the logic lives in engine/.
 """
 
 from datetime import date
+from html import escape
 
 import streamlit as st
 
@@ -109,7 +110,8 @@ def ask(question, answers):
     labels = {o["value"]: o["label"] for o in options}
 
     # Show the label (and hint) ourselves, so every question looks the same.
-    st.markdown(f'<p class="q-label">{label}</p>', unsafe_allow_html=True)
+    # escape: the label can include the first name the person typed.
+    st.markdown(f'<p class="q-label">{escape(label)}</p>', unsafe_allow_html=True)
     if question.get("hint"):
         st.markdown(f'<p class="muted hint">{question["hint"]}</p>', unsafe_allow_html=True)
     show_label = "collapsed"
@@ -162,7 +164,7 @@ def remove_document(doc_id):
     st.session_state.extracted.pop(doc_id, None)
 
 
-def show_found(doc, result):
+def show_found(doc, result, answers):
     file_name = result["file_name"]
     if not doc.get("reads_as"):
         st.success(f"Added **{file_name}**. Your accountant will go through these records.")
@@ -175,6 +177,11 @@ def show_found(doc, result):
         if result["missing_fields"]:
             missing = ", ".join(f.replace("_", " ") for f in result["missing_fields"])
             st.caption(f"Some details were not clear ({missing}). Your accountant will check them.")
+        check = rules.date_check(doc, result, answers)
+        if check and check["same"]:
+            st.caption(check["text"])
+        elif check:
+            st.markdown(f'<div class="note">{check["text"]}</div>', unsafe_allow_html=True)
 
 
 def show_documents(case, screen, index):
@@ -193,7 +200,7 @@ def show_documents(case, screen, index):
             st.markdown(f'<p class="muted">{doc["hint"]}</p>', unsafe_allow_html=True)
             result = extracted.get(doc["id"])
             if result:
-                show_found(doc, result)
+                show_found(doc, result, answers)
                 st.button("Remove", key=f"remove_{doc['id']}", on_click=remove_document, args=(doc["id"],),
                           type="tertiary")
                 continue
@@ -272,6 +279,9 @@ def show_pack(case, screen, index):
             f"- Final personal tax return: **{data['results']['final_return']['status']}**\n"
             f"- Estate tax return: **{data['results']['estate_return']['status']}**\n"
             f"- Your fixed-fee quote")
+        if data["points_to_check"]:
+            st.markdown("**Points for your accountant to check**")
+            st.markdown("\n".join(f"- {point}" for point in data["points_to_check"]))
         if data["missing_documents"]:
             st.markdown(f'<p class="muted">Still to send later: {", ".join(data["missing_documents"])}.</p>',
                         unsafe_allow_html=True)

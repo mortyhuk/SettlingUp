@@ -61,6 +61,7 @@ def build(case, answers, results, created=None):
         "answers_in_words": [{"question": q, "answer": a} for q, a in flow.answer_summary(case, answers)],
         "documents": documents,
         "missing_documents": results["missing_documents"],
+        "points_to_check": results["points_to_check"],
         "results": {
             "label": results["label"],
             "final_return": {"status": final["status"], "text": final["text"], "period": final["period"]},
@@ -147,6 +148,9 @@ def to_pdf(pack):
             [p("Key dates", bold=True), p("-"), p(r["key_dates"])],
         ], [width * 0.27, width * 0.2, width * 0.53], header=False),
     ]
+
+    points = pack["points_to_check"] or ["No extra points were flagged from the answers or documents."]
+    story += [p("Points to check", h2)] + [p(f"- {point}") for point in points]
 
     if pack["missing_documents"]:
         story += [p("Still to send", h2)] + [p(f"- {label}") for label in pack["missing_documents"]]
